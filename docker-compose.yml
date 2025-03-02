@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: db
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  scraper:
+    build:
+      context: .  # Build from project root, ensuring all backend files exist
+      dockerfile: backend/scraper/Dockerfile
+    container_name: scraper
+    restart: always
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./backend:/app/backend  # Mount entire backend for proper imports
+
+
+  # arb_detector:
+  #   build: ./backend/arb_detector
+  #   container_name: arb_detector
+  #   restart: always
+  #   depends_on:
+  #     - db
+  #     - redis
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - "8002:8000"  # Arbitrage Detector runs on port 8002
+  #   volumes:
+  #     - ./backend/arb_detector/src:/app
+  #   command: uvicorn arb_detector.src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # bet_executor:
+  #   build: ./backend/bet_executor
+  #   container_name: bet_executor
+  #   restart: always
+  #   depends_on:
+  #     - db
+  #     - redis
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - "8003:8000"  # Bet Executor runs on port 8003
+  #   volumes:
+  #     - ./backend/bet_executor/src:/app
+  #   command: uvicorn bet_executor.src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # frontend:
+  #   build: ./frontend
+  #   container_name: frontend
+  #   restart: always
+  #   depends_on:
+  #     - scraper
+  #     - arb_detector
+  #     - bet_executor
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./frontend:/app
+  #   command: npm start
+
+volumes:
+  pgdata:

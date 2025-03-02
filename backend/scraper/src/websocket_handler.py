@@ -16,4 +16,7 @@ async def websocket_endpoint(websocket: WebSocket):
 async def broadcast_message(data):
     """Send data to all connected WebSocket clients."""
     for ws in connected_clients:
-        await ws.send_json(data)
+        try:
+            await ws.send_json(data)
+        except Exception:
+            connected_clients.remove(ws)

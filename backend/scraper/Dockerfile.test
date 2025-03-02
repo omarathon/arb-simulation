@@ -1,0 +1,6 @@
+FROM smarkets-base-image
+WORKDIR /app
+COPY backend /app/backend
+COPY backend/scraper/tests /app/backend/scraper/tests
+ENV PYTHONPATH=/app
+ENTRYPOINT pytest

@@ -1,9 +1,10 @@
 import redis
 import json
 import asyncio
-from backend.websocket_handler import broadcast_message
+from backend.scraper.src.websocket_handler import broadcast_message
+from backend.scraper.src.config import ScraperConfig
 
-redis_client = redis.Redis(host='redis', port=6379, db=0)
+redis_client = redis.Redis(host=ScraperConfig.REDIS_HOST, port=ScraperConfig.REDIS_PORT, db=0)
 
 async def redis_listener():
     """Listens for Redis messages and broadcasts them to WebSocket clients."""
