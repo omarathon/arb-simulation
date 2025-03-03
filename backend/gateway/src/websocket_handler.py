@@ -1,6 +1,8 @@
 from fastapi import WebSocket
 import asyncio
 
+from backend.gateway.src.models import WebSocketMessage
+
 connected_clients = set()
 
 async def websocket_endpoint(websocket: WebSocket):
@@ -18,13 +20,13 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         connected_clients.discard(websocket)
 
-async def broadcast_message(data):
+async def broadcast_message(data: WebSocketMessage):
     """Send data to all connected WebSocket clients."""
     disconnected_clients = set()
 
     for ws in connected_clients:
         try:
-            await ws.send_json(data)
+            await ws.send_json(data.model_dump())
         except Exception:
             disconnected_clients.add(ws)
 
