@@ -1,0 +1,59 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+**/__pycache__/  # Ignores all nested __pycache__ directories
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env
+*.venv
+
+# Dependency files
+Pipfile
+Pipfile.lock
+poetry.lock
+
+# Docker-related files
+*.dockerfile
+*.Dockerfile
+*.Dockerfile.test
+.dockerignore
+
+# Logs & debugging
+*.log
+*.out
+*.err
+
+# IDE & Editor settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Test artifacts
+htmlcov/
+.coverage
+.tox/
+.nox/
+
+# Ignore build and distribution directories
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Ignore database files (if any)
+*.db
+*.sqlite3
+
+# Ignore local runtime files
+*.pid
+*.swp
+*.swo
+
+# Ignore unused/temporary Python scripts
+*.bak
+*.tmp
+*.old
