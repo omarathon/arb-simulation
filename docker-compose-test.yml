@@ -7,25 +7,12 @@ services:
       dockerfile: backend/Dockerfile.base
     image: smarkets-base-image
 
-  test_db:
-    image: postgres:15
-    container_name: test_db
-    restart: always
-    environment:
-      POSTGRES_DB: test_odds_db
-      POSTGRES_USER: test_admin
-      POSTGRES_PASSWORD: test_password
-    ports:
-      - "5433:5432"  # Use a different port than production
-    networks:
-      - test_network
-
   test_redis:
     image: redis:latest
     container_name: test_redis
     restart: always
     ports:
-      - "6380:6379"  # Use a different port than production
+      - "6380:6379"
     networks:
       - test_network
 
@@ -37,14 +24,8 @@ services:
     restart: always
     depends_on:
       - base_image
-      - test_db
       - test_redis
     environment:
-      POSTGRES_DB: test_odds_db
-      POSTGRES_USER: test_admin
-      POSTGRES_PASSWORD: test_password
-      POSTGRES_HOST: test_db
-      POSTGRES_PORT: 5432
       REDIS_HOST: test_redis
       REDIS_PORT: 6379
       ODDS_PUBLISH_INTERVAL: 1
@@ -63,14 +44,8 @@ services:
     depends_on:
       - base_image
       - test_scraper
-      - test_db
       - test_redis
     environment:
-      POSTGRES_DB: test_odds_db
-      POSTGRES_USER: test_admin
-      POSTGRES_PASSWORD: test_password
-      POSTGRES_HOST: test_db
-      POSTGRES_PORT: 5432
       REDIS_HOST: test_redis
       REDIS_PORT: 6379
       ODDS_PUBLISH_INTERVAL: 1

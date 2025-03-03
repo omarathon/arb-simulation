@@ -7,19 +7,6 @@ services:
       dockerfile: backend/Dockerfile.base
     image: smarkets-base-image
 
-  db:
-    image: postgres:15
-    container_name: db
-    restart: always
-    environment:
-      POSTGRES_DB: odds_db
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
-    networks:
-      - backend_network
-
   redis:
     image: redis:latest
     container_name: redis
@@ -36,18 +23,26 @@ services:
     container_name: scraper
     restart: always
     depends_on:
-      - base_image
-      - db
       - redis
+      - base_image
     environment:
-      POSTGRES_DB: odds_db
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      
       ODDS_PUBLISH_INTERVAL: 0.1
+
+      ODDS_UPDATE_PROBABILITY: 0.3
+      ODDS_CLOSE_PROBABILITY: 0.1
+
+      # # CONFIGURATION FOR LOTS OF ARBITRAGE
+      # VIG_PERCENTAGE: 0.04          # Lower vig (Easier arbitrage)
+      # HOME_WIN_ODDS_MIN: 1.5        # Wider range of odds (higher variance)
+      # HOME_WIN_ODDS_MAX: 2.5        # Wider range of odds (higher variance)
+
+      # CONFIGURATION FOR RARE ARBITRAGE
+      VIG_PERCENTAGE: 0.10          # High vig (harder for arbitrage)
+      HOME_WIN_ODDS_MIN: 1.8        # Narrower range of odds (lower variance)
+      HOME_WIN_ODDS_MAX: 2.3        # Narrower range of odds (lower variance)
     ports:
       - "8001:8001"
     volumes:
@@ -55,20 +50,65 @@ services:
     networks:
       - backend_network
 
-  # pgadmin:
-  #   image: dpage/pgadmin4
-  #   container_name: pgadmin
-  #   restart: always
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: admin@admin.com
-  #     PGADMIN_DEFAULT_PASSWORD: admin
-  #   ports:
-  #     - "5050:80"
-  #   depends_on:
-  #     - db
-  #   networks:
-  #     - backend_network
+  gateway:
+    build:
+      context: .
+      dockerfile: backend/gateway/Dockerfile
+    container_name: gateway
+    restart: always
+    depends_on:
+      - redis
+      - scraper
+      - base_image
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_ODDS_UPDATE_CHANNEL: odds_update
+    ports:
+      - "8002:8001"
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - backend_network
 
+  arb_engine:
+    build:
+      context: .
+      dockerfile: backend/arb_engine/Dockerfile
+    container_name: arb_engine
+    restart: always
+    depends_on:
+      - redis
+      - base_image
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "8003:8001"
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - backend_network
+
+  arb_executor:
+    build:
+      context: .
+      dockerfile: backend/arb_executor/Dockerfile
+    container_name: arb_executor
+    restart: always
+    depends_on:
+      - redis
+      - base_image
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DELAY_SECONDS_TO_EXECUTE_ARB: 0.5
+    ports:
+      - "8004:8001"
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - backend_network
 
 networks:
   backend_network:

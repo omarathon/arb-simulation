@@ -2,126 +2,108 @@ import redis
 import json
 import asyncio
 import random
-from decimal import Decimal
 from collections import defaultdict
-from sqlalchemy.orm import Session
-from backend.scraper.src.config import ScraperConfig
-from backend.shared.database import get_db
-from backend.shared.models import Odds
+from typing import Optional, Dict
+from backend.scraper.src.config import scraper_config
+from backend.shared.config import shared_config
+from backend.shared.redis import OddsUpdateMessage, OddsValues
+from backend.shared.redis import get_odds_match_hash, get_odds_match_bookmaker_key
 
-redis_client = redis.Redis(host=ScraperConfig.REDIS_HOST, port=ScraperConfig.REDIS_PORT, db=0)
+class OddsPublisher:
+    """Handles the probabilistic publishing of odds updates and closings."""
 
-# Track state for each (bookmaker, match) pair
-odds_state = defaultdict(lambda: {
-    "tick": random.randint(0, 9),  # Start at a random tick to desynchronize closings
-    "closed": False,
-    "closed_ticks": 0
-})
+    def __init__(self):
+        """Initialize the Redis client and state tracking."""
+        self.redis_client = redis.Redis(
+            host=shared_config.REDIS_HOST,
+            port=shared_config.REDIS_PORT,
+            db=0
+        )
 
-def store_odds(db: Session, match: str, bookmaker: str, home_win: float, draw: float, away_win: float, is_active: bool):
-    """Stores or updates odds in the database."""
-    existing_odd = db.query(Odds).filter_by(match=match, bookmaker=bookmaker, actionable=True).first()
-    
-    if existing_odd:
-        # Mark previous odds as inactive
-        existing_odd.actionable = False
+        self.odds_state: Dict[str, Dict[str, Optional[OddsValues]]] = defaultdict(lambda: {
+            "current_odds": self.generate_realistic_odds()
+        })
 
-    # Insert new odds or closed state
-    new_odds = Odds(
-        match=match,
-        bookmaker=bookmaker,
-        home_win=Decimal(home_win) if is_active else None,
-        draw=Decimal(draw) if is_active else None,
-        away_win=Decimal(away_win) if is_active else None,
-        actionable=is_active
-    )
-    db.add(new_odds)
-    db.commit()
+    async def publish_odds(self):
+        """Continuously publish odds updates with probabilistic changes."""
+        while True:
+            for match in scraper_config.MATCHES:
+                for bookmaker in scraper_config.BOOKMAKERS:
+                    await asyncio.sleep(scraper_config.ODDS_PUBLISH_INTERVAL)
 
-async def publish_odds_loop():
-    """Generates and publishes mock odds with randomized open/close cycles."""
+                    action = self.determine_action()
 
-    matches = ["Man Utd vs Chelsea", "Liverpool vs Arsenal", "Barcelona vs Real Madrid"]
-    bookmakers = ["Bet365", "Smarkets", "Betfair"]
+                    if action == "close":
+                        self.close_odds(match, bookmaker)
+                    elif action == "update":
+                        self.update_odds(match, bookmaker)
+                    else:
+                        print(f"🔄 {bookmaker} keeps current odds for {match}")
 
-    while True:
-        db = next(get_db())
+    def determine_action(self) -> str:
+        """Decide whether to update, keep, or close odds based on probabilities."""
+        p = random.random()
+        if p < scraper_config.ODDS_UPDATE_PROBABILITY:
+            return "update"
+        elif p < scraper_config.ODDS_UPDATE_PROBABILITY + scraper_config.ODDS_CLOSE_PROBABILITY:
+            return "close"
+        return "keep"
 
-        await asyncio.sleep(ScraperConfig.ODDS_PUBLISH_INTERVAL)
-        
-        for match in matches:
-            for bookmaker in bookmakers:
-                
-                state = odds_state[(bookmaker, match)]
+    def generate_realistic_odds(self) -> OddsValues:
+        """Generate realistic home and away odds using implied probability and vig."""
+        home_win_odds = round(random.uniform(scraper_config.HOME_WIN_ODDS_MIN, scraper_config.HOME_WIN_ODDS_MAX), 2)
+        away_win_odds = self.calculate_away_odds(home_win_odds)
+        return {"home_win": home_win_odds, "away_win": away_win_odds}
 
-                # Check if odds are currently closed
-                if state["closed"]:
-                    state["closed_ticks"] += 1
+    def calculate_away_odds(self, home_win_odds: float) -> float:
+        """
+        Calculate away odds based on home win odds, adjusting for vig.
+        """
+        home_prob = 1 / home_win_odds
+        away_prob = 1 + scraper_config.VIG_PERCENTAGE - home_prob
+        away_win_odds = round(1 / away_prob, 2)
+        return away_win_odds
 
-                    if state["closed_ticks"] >= 5:
-                        # Reopen odds
-                        state["closed"] = False
-                        state["tick"] = 0
-                        state["closed_ticks"] = 0
-                        print(f"🔓 {bookmaker} reopens odds for {match}")
+    def close_odds(self, match: str, bookmaker: str):
+        """Close the odds market, publish an update, and remove from Redis hash."""
+        state = self.odds_state[(bookmaker, match)]
+        if state["current_odds"] is None:
+            return  # Already closed, no need to send duplicate messages
 
-                    
-                    continue # Skip publishing odds while closed
+        state["current_odds"] = None  # Setting odds to None means closed
 
-                # Every 9 ticks, close odds for 5 ticks
-                if state["tick"] >= 9:
-                    state["closed"] = True
-                    state["closed_ticks"] = 0
+        odds_data: OddsUpdateMessage = {
+            "event": "odds_close",
+            "match": match,
+            "bookmaker": bookmaker,
+            "odds": None  # None signifies that the odds are closed
+        }
 
-                    # Persist closure
-                    odds_data = {
-                        "event": "odds_update",
-                        "match": match,
-                        "bookmaker": bookmaker,
-                        "odds": {
-                            "home_win": None,
-                            "draw": None,
-                            "away_win": None
-                        }
-                    }
+        # Publish odds update
+        self.redis_client.publish(shared_config.REDIS_ODDS_UPDATE_CHANNEL, json.dumps(odds_data))
 
-                    store_odds(db, match, bookmaker, 
-                               odds_data["odds"]["home_win"], 
-                               odds_data["odds"]["draw"], 
-                               odds_data["odds"]["away_win"], 
-                               is_active=False)
-                    
-                    # Notify closure
-                    redis_client.publish("odds_update", json.dumps(odds_data))
-                    print(f"❌ {bookmaker} closed odds for {match}")
+        # Remove odds from Redis hash
+        self.redis_client.hdel(get_odds_match_hash(match), get_odds_match_bookmaker_key(bookmaker))
 
-                else: # Odds are open
-                    # Persist updated odds
-                    odds_data = {
-                        "event": "odds_update",
-                        "match": match,
-                        "bookmaker": bookmaker,
-                        "odds": {
-                            "home_win": round(random.uniform(1.6, 3.2), 2),
-                            "draw": round(random.uniform(2.5, 4.5), 2),
-                            "away_win": round(random.uniform(1.6, 3.2), 2)
-                        }
-                    }
+        print(f"❌ {bookmaker} closed odds for {match}")
 
-                    store_odds(db, match, bookmaker, 
-                               odds_data["odds"]["home_win"], 
-                               odds_data["odds"]["draw"], 
-                               odds_data["odds"]["away_win"], 
-                               is_active=True)
-                    
-                    # Notify updated odds
-                    redis_client.publish("odds_update", json.dumps(odds_data))
-                    print(f"✅ {bookmaker} updated odds for {match}")
+    def update_odds(self, match: str, bookmaker: str):
+        """Update and publish new odds, and store in Redis hash."""
+        state = self.odds_state[(bookmaker, match)]
+        new_odds = self.generate_realistic_odds()
+        state["current_odds"] = new_odds  # If it was closed, it's now open again
 
-                # Update tick count
-                state["tick"] += 1
+        odds_data: OddsUpdateMessage = {
+            "event": "odds_update",
+            "match": match,
+            "bookmaker": bookmaker,
+            "odds": new_odds
+        }
 
-def start_odds_publisher():
-    """Starts the odds publishing loop in a background thread."""
-    import threading
-    threading.Thread(target=asyncio.run, args=(publish_odds_loop(),)).start()
+        # Publish odds update
+        self.redis_client.publish(shared_config.REDIS_ODDS_UPDATE_CHANNEL, json.dumps(odds_data))
+
+        # Store latest odds in Redis hash
+        self.redis_client.hset(get_odds_match_hash(match),  get_odds_match_bookmaker_key(bookmaker), json.dumps(new_odds))
+
+        print(f"✅ {bookmaker} updated odds for {match}: {new_odds}")

@@ -11,16 +11,16 @@ import {
 } from "@mui/material";
 
 interface OddsData {
+  event: string;
   match: string;
   bookmaker: string;
   odds: {
-    home_win: number | null;
-    draw: number | null;
-    away_win: number | null;
-  };
+    home_win: number;
+    away_win: number;
+  } | null;
 }
 
-const SOCKET_URL = "ws://localhost:8001/ws"; // Replace with actual WebSocket URL
+const SOCKET_URL = "ws://localhost:8002/ws"; // Replace with actual WebSocket URL
 
 const App: React.FC = () => {
   const [odds, setOdds] = useState<OddsData[]>([]);
@@ -29,7 +29,14 @@ const App: React.FC = () => {
     const ws = new WebSocket(SOCKET_URL);
 
     ws.onmessage = (event) => {
-      const data: OddsData = JSON.parse(event.data);
+      let data: OddsData;
+      try {
+        data = JSON.parse(event.data);
+      }
+      catch (error) {
+        console.error("Error parsing JSON:", error);
+        return;
+      }
 
       setOdds((prevOdds) => {
         const existingIndex = prevOdds.findIndex(
@@ -66,25 +73,26 @@ const App: React.FC = () => {
     return acc;
   }, {} as Record<string, OddsData[]>);
 
-  // Function to detect arbitrage opportunities
   const detectArbitrage = (matchOdds: OddsData[]): boolean => {
-    let bestHomeWin = 0;
-    let bestDraw = 0;
-    let bestAwayWin = 0;
-
-    matchOdds.forEach((odd) => {
-      if (odd.odds.home_win) bestHomeWin = Math.max(bestHomeWin, odd.odds.home_win);
-      if (odd.odds.draw) bestDraw = Math.max(bestDraw, odd.odds.draw);
-      if (odd.odds.away_win) bestAwayWin = Math.max(bestAwayWin, odd.odds.away_win);
-    });
-
-    if (bestHomeWin > 0 && bestDraw > 0 && bestAwayWin > 0) {
-      const arbitrageValue = (1 / bestHomeWin) + (1 / bestDraw) + (1 / bestAwayWin);
-      return arbitrageValue < 1; // Arbitrage exists if sum < 1
+    let minArbValue = Infinity;
+  
+    for (let i = 0; i < matchOdds.length; i++) {
+      for (let j = 0; j < matchOdds.length; j++) {
+        if (i === j) continue; // Avoid same bookmaker
+  
+        const homeWin = matchOdds[i].odds?.home_win;
+        const awayWin = matchOdds[j].odds?.away_win;
+  
+        if (homeWin && awayWin) {
+          const arbitrageValue = (1 / homeWin) + (1 / awayWin);
+          minArbValue = Math.min(minArbValue, arbitrageValue);
+        }
+      }
     }
-
-    return false;
+  
+    return minArbValue < 1;
   };
+  
 
   return (
     <div style={{ padding: "20px", textAlign: "center" }}>
@@ -103,9 +111,6 @@ const App: React.FC = () => {
               </TableCell>
               <TableCell>
                 <strong>Home Win</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Draw</strong>
               </TableCell>
               <TableCell>
                 <strong>Away Win</strong>
@@ -127,10 +132,7 @@ const App: React.FC = () => {
 
                   {matchOdds.map((odd, index) => {
                     // Check if the odds are closed (all values inside `odds` are null)
-                    const isClosed =
-                      odd.odds.home_win === null &&
-                      odd.odds.draw === null &&
-                      odd.odds.away_win === null;
+                    const isClosed = odd.event == "odds_close"
 
                     return (
                       <TableRow
@@ -145,9 +147,8 @@ const App: React.FC = () => {
                       >
                         <TableCell>{index === 0 ? odd.match : ""}</TableCell>
                         <TableCell>{odd.bookmaker}</TableCell>
-                        <TableCell>{odd.odds.home_win ?? "-"}</TableCell>
-                        <TableCell>{odd.odds.draw ?? "-"}</TableCell>
-                        <TableCell>{odd.odds.away_win ?? "-"}</TableCell>
+                        <TableCell>{odd.odds?.home_win ?? "-"}</TableCell>
+                        <TableCell>{odd.odds?.away_win ?? "-"}</TableCell>
                       </TableRow>
                     );
                   })}
