@@ -1,18 +1,24 @@
 version: '3.8'
 
 services:
+  base_image:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.base
+    image: smarkets-base-image
+
   db:
     image: postgres:15
     container_name: db
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: odds_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend_network
 
   redis:
     image: redis:latest
@@ -20,67 +26,49 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    networks:
+      - backend_network
 
   scraper:
     build:
-      context: .  # Build from project root, ensuring all backend files exist
+      context: .
       dockerfile: backend/scraper/Dockerfile
     container_name: scraper
     restart: always
     depends_on:
+      - base_image
       - db
       - redis
-    env_file:
-      - .env
+    environment:
+      POSTGRES_DB: odds_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ODDS_PUBLISH_INTERVAL: 0.1
     ports:
-      - "8001:8000"
+      - "8001:8001"
     volumes:
-      - ./backend:/app/backend  # Mount entire backend for proper imports
+      - ./backend:/app/backend
+    networks:
+      - backend_network
 
-
-  # arb_detector:
-  #   build: ./backend/arb_detector
-  #   container_name: arb_detector
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: pgadmin
   #   restart: always
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@admin.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #   ports:
+  #     - "5050:80"
   #   depends_on:
   #     - db
-  #     - redis
-  #   env_file:
-  #     - .env
-  #   ports:
-  #     - "8002:8000"  # Arbitrage Detector runs on port 8002
-  #   volumes:
-  #     - ./backend/arb_detector/src:/app
-  #   command: uvicorn arb_detector.src.main:app --host 0.0.0.0 --port 8000 --reload
+  #   networks:
+  #     - backend_network
 
-  # bet_executor:
-  #   build: ./backend/bet_executor
-  #   container_name: bet_executor
-  #   restart: always
-  #   depends_on:
-  #     - db
-  #     - redis
-  #   env_file:
-  #     - .env
-  #   ports:
-  #     - "8003:8000"  # Bet Executor runs on port 8003
-  #   volumes:
-  #     - ./backend/bet_executor/src:/app
-  #   command: uvicorn bet_executor.src.main:app --host 0.0.0.0 --port 8000 --reload
 
-  # frontend:
-  #   build: ./frontend
-  #   container_name: frontend
-  #   restart: always
-  #   depends_on:
-  #     - scraper
-  #     - arb_detector
-  #     - bet_executor
-  #   ports:
-  #     - "3000:3000"
-  #   volumes:
-  #     - ./frontend:/app
-  #   command: npm start
-
-volumes:
-  pgdata:
+networks:
+  backend_network:
