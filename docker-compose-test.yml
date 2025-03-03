@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  base_image:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.base
+    image: smarkets-base-image
+
+  test_redis:
+    image: redis:latest
+    container_name: test_redis
+    restart: always
+    ports:
+      - "6380:6379"
+    networks:
+      - test_network
+
+  test_scraper:
+    build:
+      context: .
+      dockerfile: backend/scraper/Dockerfile
+    container_name: test_scraper
+    restart: always
+    depends_on:
+      - base_image
+      - test_redis
+    environment:
+      REDIS_HOST: test_redis
+      REDIS_PORT: 6379
+      ODDS_PUBLISH_INTERVAL: 1
+    ports:
+      - "8002:8001"
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - test_network
+
+  test_runner:
+    build:
+      context: .
+      dockerfile: backend/scraper/Dockerfile.test
+    container_name: test_runner
+    depends_on:
+      - base_image
+      - test_scraper
+      - test_redis
+    environment:
+      REDIS_HOST: test_redis
+      REDIS_PORT: 6379
+      ODDS_PUBLISH_INTERVAL: 1
+    networks:
+      - test_network
+
+networks:
+  test_network:
