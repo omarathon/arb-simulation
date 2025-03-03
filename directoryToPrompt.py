@@ -50,8 +50,8 @@ if __name__ == '__main__':
     output_filename = os.path.join(base_directory, 'dir_prompt.txt')
 
     # Exclusions (adjust as needed)
-    exclude_folders = ['./node_modules', './.next', './public', './api', './.git']
-    exclude_files = ['package-lock.json', 'package.json', '.gitignore', '.env.local', 'directoryToPrompt.py', 'p.txt', 'dir_prompt.txt']
+    exclude_folders = ['./frontend/node_modules', './frontend/.next', './frontend/public', './frontend/api', './.git', './backend']
+    exclude_files = ['./frontend/package-lock.json', './frontend/package.json', '.gitignore', '.env.local', 'directoryToPrompt.py', 'dir_prompt.txt']
 
     generate_directory_contents_file(base_directory, output_filename, exclude_folders, exclude_files)
     print(f"Directory contents written to {output_filename}")
