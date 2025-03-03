@@ -1,9 +1,9 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import React from "react";
+import { screen } from "@testing-library/react";
+import App from "./App";
+import { renderWithWebSocket } from "./setupTests";
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+test("renders Live Odds Table", () => {
+  renderWithWebSocket(<App />);
+  expect(screen.getByText(/Live Odds Table/i)).toBeInTheDocument();
 });
