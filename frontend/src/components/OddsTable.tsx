@@ -1,7 +1,6 @@
 import React, { useContext } from "react";
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography } from "@mui/material";
 import { WebSocketContext } from "../contexts/WebSocketContext";
-import { detectArbitrage } from "./ArbitrageDetector";
 
 interface OddsData {
   event: string;
@@ -11,6 +10,7 @@ interface OddsData {
     home_win: number;
     away_win: number;
   } | null;
+  arb_status?: "detected" | "completed" | null;
 }
 
 const OddsTable: React.FC = () => {
@@ -47,41 +47,39 @@ const OddsTable: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {Object.entries(groupedOdds).map(([match, matchOdds]: [string, OddsData[]], matchIndex) => {
-              const hasArbitrage = detectArbitrage(matchOdds as OddsData[]);
+            {Object.entries(groupedOdds).map(([match, matchOdds], matchIndex) => (
+              <React.Fragment key={match}>
+                {matchIndex > 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} style={{ height: "20px" }} />
+                  </TableRow>
+                )}
 
-              return (
-                <React.Fragment key={match}>
-                  {matchIndex > 0 && (
-                    <TableRow>
-                      <TableCell colSpan={5} style={{ height: "20px" }} />
+                {matchOdds.map((odd, index) => {
+                  const isClosed = odd.event === "odds_close";
+
+                  return (
+                    <TableRow
+                      key={index}
+                      style={{
+                        backgroundColor: isClosed
+                          ? "#ffcccc" // 🟥 Red if closed
+                          : odd.arb_status === "completed"
+                          ? "#ccffcc" // 🟩 Green if successfully executed
+                          : odd.arb_status === "detected"
+                          ? "#ffffcc" // 🟨 Yellow if detected
+                          : "#ffffff", // ⚪ White if no arb detected
+                      }}
+                    >
+                      <TableCell>{index === 0 ? odd.match : ""}</TableCell>
+                      <TableCell>{odd.bookmaker}</TableCell>
+                      <TableCell>{odd.odds?.home_win ?? "-"}</TableCell>
+                      <TableCell>{odd.odds?.away_win ?? "-"}</TableCell>
                     </TableRow>
-                  )}
-
-                  {matchOdds.map((odd: OddsData, index: number) => {
-                    const isClosed = odd.event === "odds_close";
-
-                    return (
-                      <TableRow
-                        key={index}
-                        style={{
-                          backgroundColor: isClosed
-                            ? "#ffcccc" // Light red if closed
-                            : hasArbitrage
-                            ? "#ffffcc" // Light yellow if arbitrage detected
-                            : "#ccffcc", // Light green if open
-                        }}
-                      >
-                        <TableCell>{index === 0 ? odd.match : ""}</TableCell>
-                        <TableCell>{odd.bookmaker}</TableCell>
-                        <TableCell>{odd.odds?.home_win ?? "-"}</TableCell>
-                        <TableCell>{odd.odds?.away_win ?? "-"}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </React.Fragment>
-              );
-            })}
+                  );
+                })}
+              </React.Fragment>
+            ))}
           </TableBody>
         </Table>
       </TableContainer>
