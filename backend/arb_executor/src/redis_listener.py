@@ -34,11 +34,8 @@ class RedisListener:
                         data = json.loads(message["data"])
                         arb_message = ArbMessage(**data)
 
-                        # print(f"✅ Received valid ArbMessage: {arb_message.model_dump_json()}")
-
-                        # Execute arbitrage asynchronously to prevent blocking
                         asyncio.create_task(self.arb_executor.execute_arb(arb_message))
-
+                        
                     except json.JSONDecodeError:
                         print(f"⚠️ Failed to decode JSON: {message['data']}")
                     except ValidationError as e:

@@ -4,7 +4,7 @@ import json
 from typing import List, Dict
 from backend.arb_engine.src.config import arb_engine_config
 from backend.shared.config import shared_config
-from backend.shared.arb_math import calculate_guaranteed_payout
+from backend.shared.arb_math import calculate_guaranteed_profit
 
 from backend.scraper.src.odds_publisher import OddsUpdateMessage
 
@@ -17,6 +17,8 @@ from backend.shared.utils import current_milli_time
     
 
 class ArbOpportunity:
+    """Math for valid arb opportunities."""
+
     match: str
     bookmaker_home_win: str
     bookmaker_away_win: str
@@ -49,7 +51,8 @@ class ArbOpportunity:
     
 
 class ArbEngine:
-    """Detects and publishes arbitrage opportunities to Redis."""
+    """Detects and publishes valid arbitrage opportunities to Redis."""
+    
     def __init__(self):
         self.redis_client = redis.Redis(
             host=shared_config.REDIS_HOST,
@@ -134,7 +137,7 @@ class ArbEngine:
         stake_home = arb.compute_stake_at_bookmaker(is_home_win_bookmaker=True, overall_stake=overall_stake)
         stake_away = arb.compute_stake_at_bookmaker(is_home_win_bookmaker=False, overall_stake=overall_stake)
 
-        guaranteed_payout = calculate_guaranteed_payout(
+        guaranteed_profit = calculate_guaranteed_profit(
             stake_home, stake_away, arb.odds_home_win, arb.odds_away_win
         )
 
@@ -147,7 +150,7 @@ class ArbEngine:
             away_win_odds=arb.odds_away_win,
             home_win_stake=stake_home,
             away_win_stake=stake_away,
-            guaranteed_payout=guaranteed_payout,
+            guaranteed_profit=guaranteed_profit,
             status="detected",
             timestamp=current_milli_time()
         )

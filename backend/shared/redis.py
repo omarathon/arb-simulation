@@ -21,7 +21,7 @@ class ArbMessage(BaseModel):
     away_win_odds: Optional[float]
     home_win_stake: float
     away_win_stake: float
-    guaranteed_payout: float
+    guaranteed_profit: float
     status: Literal["detected", "completed", "cancelled", "adjusted"] # Adjusted if the odds changed. Cancelled if one of the odds closed.
     timestamp: int # ms since epoch
 

@@ -1,17 +1,18 @@
 import asyncio
+from pydantic import ValidationError
 import redis
 import json
 from typing import Optional
 from backend.arb_executor.src.config import arb_executor_config
-from backend.shared.arb_math import calculate_guaranteed_payout
+from backend.shared.arb_math import calculate_guaranteed_profit
 from backend.shared.config import shared_config
 
-from backend.shared.redis import ArbMessage
+from backend.shared.redis import ArbMessage, OddsValues
 from backend.shared.redis import get_odds_match_hash, get_odds_match_bookmaker_key
 
 
 class ArbExecutor:
-    """Executes detected arbs and publishes the result to Redis."""
+    """Executes detected arbs after a simulated delay and publishes the result to Redis."""
 
     def __init__(self):
         self.redis_client = redis.Redis(
@@ -26,37 +27,75 @@ class ArbExecutor:
         print(f"⏳ Waiting {arb_executor_config.DELAY_SECONDS_TO_EXECUTE_ARB} seconds before executing arb: {arb_message.id}")
         await asyncio.sleep(arb_executor_config.DELAY_SECONDS_TO_EXECUTE_ARB)
 
-        # Fetch latest odds from Redis
-        latest_home_odds = self.get_latest_odds(arb_message.match, arb_message.home_win_bookmaker, is_home_win=True)
-        latest_away_odds = self.get_latest_odds(arb_message.match, arb_message.away_win_bookmaker, is_home_win=False)
-
-        if latest_home_odds is None or latest_away_odds is None:
-            print(f"❌ Arb cancelled: Odds no longer available for arb: {arb_message.id}")
-            arb_message.status = "cancelled"
-            self.publish_arb_execution(arb_message)
+        # Fetch latest odds
+        try:
+            latest_home_odds, latest_away_odds, odds_changed = self.fetch_latest_odds(arb_message)
+        except (json.JSONDecodeError, ValidationError) as e:
+            print(f"🚨 Skipping execution for Arb ID {arb_message.id} due to odds deserialization error: {e}")
             return
 
-        # Update odds in message
-        odds_changed = latest_home_odds != arb_message.home_win_odds or latest_away_odds != arb_message.away_win_odds
+        # Update the arb message with new odds
         arb_message.home_win_odds = latest_home_odds
         arb_message.away_win_odds = latest_away_odds
 
-        # Calculate new expected payout using the correct EV formula
-        latest_guaranteed_payout = calculate_guaranteed_payout(
+        # Update stakes if there was a cancellation (in which case no money was betted)
+        cancelled_home, cancelled_away = self.update_stakes(arb_message)
+
+        # Calculate new profit
+        self.calculate_and_update_profit(arb_message)
+
+        # Determine new status
+        arb_message.status = self.determine_status(cancelled_home, cancelled_away, odds_changed)
+
+        # Publish and log result
+        self.publish_arb_execution(arb_message)
+        self.log_execution_status(arb_message.status, arb_message.id)
+
+    def fetch_latest_odds(self, arb_message: ArbMessage):
+        """Fetches the latest odds for home and away and determines if they changed."""
+        latest_home_odds = self.get_latest_odds(arb_message.match, arb_message.home_win_bookmaker, is_home_win=True)
+        latest_away_odds = self.get_latest_odds(arb_message.match, arb_message.away_win_bookmaker, is_home_win=False)
+
+        odds_changed = latest_home_odds != arb_message.home_win_odds or latest_away_odds != arb_message.away_win_odds
+        return latest_home_odds, latest_away_odds, odds_changed
+
+    def update_stakes(self, arb_message: ArbMessage):
+        """Updates stake values if an outcome is cancelled."""
+        cancelled_home = arb_message.home_win_odds is None
+        cancelled_away = arb_message.away_win_odds is None
+
+        if cancelled_home:
+            arb_message.home_win_stake = 0
+        if cancelled_away:
+            arb_message.away_win_stake = 0
+
+        return cancelled_home, cancelled_away
+
+    def calculate_and_update_profit(self, arb_message: ArbMessage):
+        """Recalculates and updates the guaranteed profit."""
+        arb_message.guaranteed_profit = calculate_guaranteed_profit(
             arb_message.home_win_stake,
             arb_message.away_win_stake,
-            latest_home_odds,
-            latest_away_odds
+            arb_message.home_win_odds,
+            arb_message.away_win_odds
         )
 
-        arb_message.guaranteed_payout = latest_guaranteed_payout
-        arb_message.status = "adjusted" if odds_changed else "completed"
+    def determine_status(self, cancelled_home: bool, cancelled_away: bool, odds_changed: bool) -> str:
+        """Determines the new status of the arbitrage execution."""
+        if cancelled_home or cancelled_away:
+            return "cancelled"
+        elif odds_changed:
+            return "adjusted"
+        return "completed"
 
-        if odds_changed:
-            print(f"⚠️ Arb executed with adjusted odds: {arb_message.id}")
-        else:
-            print(f"✅ Arb executed: {arb_message.id}")
-        self.publish_arb_execution(arb_message)
+    def log_execution_status(self, status: str, id: str):
+        """Logs the execution status message."""
+        messages = {
+            "cancelled": "❌ Arb cancelled",
+            "adjusted": "⚠️ Arb executed with adjusted odds",
+            "completed": "✅ Arb executed"
+        }
+        print(f"{messages.get(status, '❓ Unknown status')} - ID: {id}")
 
     def get_latest_odds(self, match: str, bookmaker: str, is_home_win: bool) -> Optional[float]:
         """Fetch the latest odds for a given (match, bookmaker) from Redis."""
@@ -65,15 +104,13 @@ class ArbExecutor:
 
         odds_json = self.redis_client.hget(match_hash, bookmaker_key)
         if odds_json is None:
-            return None  # Odds were removed (likely cancelled)
+            return None  # Odds were removed (cancelled)
 
-        try:
-            odds = json.loads(odds_json)
-            return odds.get("home_win" if is_home_win else "away_win")
-        except json.JSONDecodeError:
-            print(f"⚠️ Failed to decode odds for {match}, {bookmaker}: {odds_json}")
-            return None
+        odds_data = json.loads(odds_json)
+        odds = OddsValues(**odds_data)
+        return odds.home_win if is_home_win else odds.away_win
 
+    
     def publish_arb_execution(self, arb_message: ArbMessage):
         """Publishes the updated arbitrage execution result to Redis."""
         arb_data = json.dumps(arb_message.model_dump())
