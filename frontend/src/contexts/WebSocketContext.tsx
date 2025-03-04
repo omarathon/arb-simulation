@@ -43,7 +43,7 @@ interface WebSocketContextProps {
 
 export const WebSocketContext = createContext<WebSocketContextProps | undefined>(undefined);
 
-const PROFIT_WINDOW = 0.5 * 60 * 1000; // 5-minute window
+const PROFIT_WINDOW = 5 * 60 * 1000; // 5-minute window
 
 export const WebSocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [odds, setOdds] = useState<OddsData[]>([]);

@@ -14,10 +14,12 @@
     "@types/node": "^16.18.126",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "chart.js": "^4.4.8",
     "dotenv": "^16.4.7",
     "plotly": "^1.0.6",
     "plotly.js": "^3.0.1",
     "react": "^19.0.0",
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.0.0",
     "react-plotly.js": "^2.6.0",
     "react-scripts": "5.0.1",
@@ -48,5 +50,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/react-plotly.js": "^2.6.3"
   }
 }
