@@ -29,7 +29,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       
-      ODDS_PUBLISH_INTERVAL: 0.1
+      ODDS_PUBLISH_INTERVAL: 0.2
 
       ODDS_UPDATE_PROBABILITY: 0.3
       ODDS_CLOSE_PROBABILITY: 0.1
@@ -39,10 +39,15 @@ services:
       # HOME_WIN_ODDS_MIN: 1.5        # Wider range of odds (higher variance)
       # HOME_WIN_ODDS_MAX: 2.5        # Wider range of odds (higher variance)
 
+      # CONFIGURATION FOR MEDIUM ARBITRAGE
+      VIG_PERCENTAGE: 0.07          # High vig (harder for arbitrage)
+      HOME_WIN_ODDS_MIN: 1.7        # Narrower range of odds (lower variance)
+      HOME_WIN_ODDS_MAX: 2.5        # Narrower range of odds (lower variance)
+
       # CONFIGURATION FOR RARE ARBITRAGE
-      VIG_PERCENTAGE: 0.10          # High vig (harder for arbitrage)
-      HOME_WIN_ODDS_MIN: 1.8        # Narrower range of odds (lower variance)
-      HOME_WIN_ODDS_MAX: 2.3        # Narrower range of odds (lower variance)
+      # VIG_PERCENTAGE: 0.10          # High vig (harder for arbitrage)
+      # HOME_WIN_ODDS_MIN: 1.8        # Narrower range of odds (lower variance)
+      # HOME_WIN_ODDS_MAX: 2.3        # Narrower range of odds (lower variance)
     ports:
       - "8001:8001"
     volumes:
@@ -102,6 +107,7 @@ services:
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      # DELAY_SECONDS_TO_EXECUTE_ARB: 0.5
       DELAY_SECONDS_TO_EXECUTE_ARB: 0.5
     ports:
       - "8004:8001"
