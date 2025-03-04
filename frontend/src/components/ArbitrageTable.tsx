@@ -1,21 +1,14 @@
 import React, { useContext } from "react";
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography } from "@mui/material";
 import { WebSocketContext } from "../contexts/WebSocketContext";
+import { ArbMessage } from "../types";
 
-interface ArbMessage {
-  id: string;
-  match: string;
-  home_win_bookmaker: string;
-  away_win_bookmaker: string;
-  home_win_odds?: number;
-  away_win_odds?: number;
-  home_win_stake: number;
-  away_win_stake: number;
-  guaranteed_payout: number;
-  profit: number; // ✅ NEW
-  status: "detected" | "completed" | "cancelled" | "adjusted";
-  timestamp: number;
-}
+const niceStatuses: Record<ArbMessage["status"], string> = {
+  detected: "Detected",
+  completed: "Completed",
+  adjusted: "Adjusted",
+  cancelled: "Cancelled",
+};
 
 const statusColors: Record<ArbMessage["status"], string> = {
   detected: "#fff6b3", // Yellow
@@ -32,7 +25,7 @@ const ArbitrageTable: React.FC = () => {
   }
 
   const { arbitrages } = context;
-  const arbList = Object.values(arbitrages)
+  const arbList: ArbMessage[] = Object.values(arbitrages)
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 10); // Limit to last 10 arbitrages
 
@@ -45,6 +38,7 @@ const ArbitrageTable: React.FC = () => {
         <Table stickyHeader>
           <TableHead>
             <TableRow>
+              <TableCell><strong>Status</strong></TableCell>
               <TableCell><strong>Match</strong></TableCell>
               <TableCell><strong>Home Bookmaker</strong></TableCell>
               <TableCell><strong>Away Bookmaker</strong></TableCell>
@@ -52,14 +46,13 @@ const ArbitrageTable: React.FC = () => {
               <TableCell><strong>Away Odds</strong></TableCell>
               <TableCell><strong>Home Stake</strong></TableCell>
               <TableCell><strong>Away Stake</strong></TableCell>
-              <TableCell><strong>Payout</strong></TableCell>
-              <TableCell><strong>Profit</strong></TableCell> {/* ✅ NEW COLUMN */}
-              <TableCell><strong>Status</strong></TableCell>
+              <TableCell><strong>Profit</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {arbList.map((arb) => (
               <TableRow key={arb.id} style={{ backgroundColor: statusColors[arb.status] }}>
+                <TableCell>{niceStatuses[arb.status]}</TableCell>
                 <TableCell>{arb.match}</TableCell>
                 <TableCell>{arb.home_win_bookmaker}</TableCell>
                 <TableCell>{arb.away_win_bookmaker}</TableCell>
@@ -67,9 +60,7 @@ const ArbitrageTable: React.FC = () => {
                 <TableCell>{arb.away_win_odds ?? "-"}</TableCell>
                 <TableCell>${arb.home_win_stake.toFixed(2)}</TableCell>
                 <TableCell>${arb.away_win_stake.toFixed(2)}</TableCell>
-                <TableCell>${arb.guaranteed_payout.toFixed(2)}</TableCell>
-                <TableCell>${arb.profit.toFixed(2)}</TableCell> {/* ✅ SHOW PROFIT */}
-                <TableCell>{arb.status.toUpperCase()}</TableCell>
+                <TableCell>${arb.guaranteed_profit.toFixed(2)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
