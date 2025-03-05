@@ -1,4 +1,3 @@
-// /context/WebSocketContext.tsx
 import React, { createContext, useEffect } from "react";
 import { WebSocketService } from "../services/WebSocketService";
 import { useOdds } from "../hooks/useOdds";
@@ -15,40 +14,58 @@ interface WebSocketContextProps {
 
 export const WebSocketContext = createContext<WebSocketContextProps | undefined>(undefined);
 
+// Pure message-handling function that can be tested independently.
+export const handleMessage = (
+  message: WebSocketMessage,
+  handlers: {
+    updateOdds: (contents: any) => void;
+    updateOddsWithArbitrage: (contents: any) => void;
+    updateArbitrages: (contents: any) => void;
+    updateProfit: (profit: number, timestamp: number) => void;
+  }
+) => {
+  const { message_type, contents } = message;
+
+  if (message_type === "odds_update") {
+    handlers.updateOdds(contents);
+    return;
+  }
+
+  if (message_type === "arb_detection" || message_type === "arb_execution") {
+    handlers.updateArbitrages(contents);
+    handlers.updateOddsWithArbitrage(contents);
+  }
+
+  if (
+    message_type === "arb_execution" &&
+    ["completed", "adjusted", "cancelled"].includes(contents.status)
+  ) {
+    handlers.updateProfit(contents.guaranteed_profit, contents.timestamp);
+  }
+
+  if (!["odds_update", "arb_detection", "arb_execution"].includes(message_type)) {
+    console.warn("Unknown WebSocket message type:", message_type);
+  }
+};
+
 export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { odds, updateOdds, updateOddsWithArbitrage } = useOdds();
   const { arbitrages, updateArbitrages } = useArbitrages();
   const { cumulativeProfits, totalProfit, updateProfit } = useProfit();
 
-  useEffect(() => {
-    const wsService = new WebSocketService(handleMessage);
-    wsService.connect();
+  const handleMessageWrapper = (message: WebSocketMessage) =>
+    handleMessage(message, {
+      updateOdds,
+      updateOddsWithArbitrage,
+      updateArbitrages,
+      updateProfit,
+    });
 
+  useEffect(() => {
+    const wsService = new WebSocketService(handleMessageWrapper);
+    wsService.connect();
     return () => wsService.disconnect();
   }, []);
-
-  const handleMessage = (message: WebSocketMessage) => {
-    const { message_type, contents } = message;
-  
-    if (message_type === "odds_update") {
-      updateOdds(contents);
-      return;
-    }
-  
-    if (message_type === "arb_detection" || message_type === "arb_execution") {
-      updateArbitrages(contents);
-      updateOddsWithArbitrage(contents);
-    }
-  
-    if (message_type === "arb_execution" && ["completed", "adjusted", "cancelled"].includes(contents.status)) {
-      updateProfit(contents.guaranteed_profit, contents.timestamp);
-    }
-  
-    if (!["odds_update", "arb_detection", "arb_execution"].includes(message_type)) {
-      console.warn("Unknown WebSocket message type:", message_type);
-    }
-  };
-  
 
   return (
     <WebSocketContext.Provider value={{ odds, arbitrages, cumulativeProfits, totalProfit }}>

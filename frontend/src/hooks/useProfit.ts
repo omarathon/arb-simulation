@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const PROFIT_WINDOW = 5 * 60 * 1000; // 5-minute window
+export const PROFIT_WINDOW = 5 * 60 * 1000; // 5-minute window
 
 export const useProfit = () => {
   const [cumulativeProfits, setCumulativeProfits] = useState<{ timestamp: number; profit: number }[]>([]);

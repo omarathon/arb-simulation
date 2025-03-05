@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ArbMessage } from "../types";
 
-const ARB_WINDOW = 5 * 60 * 1000; // 5-minute window
+export const ARB_WINDOW = 5 * 60 * 1000; // 5-minute window
 
 export const useArbitrages = () => {
   const [arbitrages, setArbitrages] = useState<Record<string, ArbMessage>>({});
@@ -10,14 +10,16 @@ export const useArbitrages = () => {
     const now = Date.now();
 
     setArbitrages((prevArbs) => {
+      const newArbs = {
+        ...prevArbs,
+        [arbData.id]: arbData
+      };
+
       const filteredArbs = Object.fromEntries(
-        Object.entries(prevArbs).filter(([_, arb]) => now - arb.timestamp <= ARB_WINDOW)
+        Object.entries(newArbs).filter(([_, arb]) => now - arb.timestamp <= ARB_WINDOW)
       );
 
-      return {
-        ...filteredArbs,
-        [arbData.id]: arbData, // ✅ Add new or updated arbitrage
-      };
+      return filteredArbs;
     });
   };
 
