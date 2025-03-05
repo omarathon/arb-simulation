@@ -11,6 +11,7 @@ class OddsUpdateMessage(BaseModel):
     match: str
     bookmaker: str
     odds: Optional[OddsValues]
+    timestamp: int # ms since epoch
 
 class ArbMessage(BaseModel):
     id: str

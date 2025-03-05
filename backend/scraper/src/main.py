@@ -2,20 +2,23 @@ import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from backend.scraper.src.odds_publisher import OddsPublisher
+from backend.shared.logging import setup_logging
+from backend.shared.redis_client import redis_client
+from backend.scraper.src.config import scraper_config
 
-odds_publisher = OddsPublisher()
+setup_logging()
+
+odds_publisher = OddsPublisher(redis_client, scraper_config.ODDS_SEED)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Start the odds publisher as a background task on app startup."""
     task = asyncio.create_task(odds_publisher.publish_odds())
     yield
-    task.cancel()  # Stop the background task when shutting down
-    print("Scraper shutting down...")
+    task.cancel()
     
 app = FastAPI(
-    title="Scraper API",
-    description="API for scraping and publishing odds",
+    title="Scraper",
+    description="Server which scrapes and publishes odds.",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",

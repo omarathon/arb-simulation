@@ -3,8 +3,8 @@ version: '3.8'
 services:
   base_image:
     build:
-      context: .
-      dockerfile: backend/Dockerfile.base
+      context: ./backend
+      dockerfile: Dockerfile.base
     image: smarkets-base-image
 
   redis:
@@ -35,17 +35,17 @@ services:
       ODDS_CLOSE_PROBABILITY: 0.1
 
       # # CONFIGURATION FOR LOTS OF ARBITRAGE
-      # VIG_PERCENTAGE: 0.04          # Lower vig (Easier arbitrage)
+      # VIG_PROBABILITY: 0.04          # Lower vig (Easier arbitrage)
       # HOME_WIN_ODDS_MIN: 1.5        # Wider range of odds (higher variance)
       # HOME_WIN_ODDS_MAX: 2.5        # Wider range of odds (higher variance)
 
       # CONFIGURATION FOR MEDIUM ARBITRAGE
-      VIG_PERCENTAGE: 0.07          # High vig (harder for arbitrage)
+      VIG_PROBABILITY: 0.07          # High vig (harder for arbitrage)
       HOME_WIN_ODDS_MIN: 1.7        # Narrower range of odds (lower variance)
       HOME_WIN_ODDS_MAX: 2.5        # Narrower range of odds (lower variance)
 
       # CONFIGURATION FOR RARE ARBITRAGE
-      # VIG_PERCENTAGE: 0.10          # High vig (harder for arbitrage)
+      # VIG_PROBABILITY: 0.10          # High vig (harder for arbitrage)
       # HOME_WIN_ODDS_MIN: 1.8        # Narrower range of odds (lower variance)
       # HOME_WIN_ODDS_MAX: 2.3        # Narrower range of odds (lower variance)
     ports:

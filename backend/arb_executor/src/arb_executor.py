@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from pydantic import ValidationError
 import redis
 import json
@@ -14,24 +15,18 @@ from backend.shared.redis import get_odds_match_hash, get_odds_match_bookmaker_k
 class ArbExecutor:
     """Executes detected arbs after a simulated delay and publishes the result to Redis."""
 
-    def __init__(self):
-        self.redis_client = redis.Redis(
-            host=shared_config.REDIS_HOST,
-            port=shared_config.REDIS_PORT,
-            db=0,
-            decode_responses=True
-        )
+    def __init__(self, redis_client: redis.Redis):
+        self.redis_client: redis.Redis = redis_client
 
     async def execute_arb(self, arb_message: ArbMessage):
-        """Executes the arbitrage bet after a delay asynchronously."""
-        print(f"⏳ Waiting {arb_executor_config.DELAY_SECONDS_TO_EXECUTE_ARB} seconds before executing arb: {arb_message.id}")
+        logging.info(f"⏳ Waiting {arb_executor_config.DELAY_SECONDS_TO_EXECUTE_ARB} seconds before executing arb: {arb_message.id}")
         await asyncio.sleep(arb_executor_config.DELAY_SECONDS_TO_EXECUTE_ARB)
 
         # Fetch latest odds
         try:
             latest_home_odds, latest_away_odds, odds_changed = self.fetch_latest_odds(arb_message)
-        except (json.JSONDecodeError, ValidationError) as e:
-            print(f"🚨 Skipping execution for Arb ID {arb_message.id} due to odds deserialization error: {e}")
+        except (json.JSONDecodeError, ValidationError):
+            logging.error(f"Skipping execution for Arb ID {arb_message.id} due to odds deserialization error.", exc_info=True)
             return
 
         # Update the arb message with new odds
@@ -95,7 +90,7 @@ class ArbExecutor:
             "adjusted": "⚠️ Arb executed with adjusted odds",
             "completed": "✅ Arb executed"
         }
-        print(f"{messages.get(status, '❓ Unknown status')} - ID: {id}")
+        logging.info(f"{messages.get(status, '❓ Unknown status')} - ID: {id}")
 
     def get_latest_odds(self, match: str, bookmaker: str, is_home_win: bool) -> Optional[float]:
         """Fetch the latest odds for a given (match, bookmaker) from Redis."""
@@ -115,4 +110,4 @@ class ArbExecutor:
         """Publishes the updated arbitrage execution result to Redis."""
         arb_data = json.dumps(arb_message.model_dump())
         self.redis_client.publish(shared_config.REDIS_ARB_EXECUTIONS_CHANNEL, arb_data)
-        print(f"📢 Published ArbMessage to Redis: {arb_data}")
+        logging.info(f"Published ArbMessage to Redis: {arb_data}")

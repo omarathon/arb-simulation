@@ -3,20 +3,18 @@ from backend.gateway.src.websocket_handler import websocket_endpoint
 from backend.gateway.src.redis_listener import RedisListener
 from contextlib import asynccontextmanager
 import asyncio
+from backend.shared.logging import setup_logging
+from backend.shared.redis_client import redis_client
 
-# Initialize Redis listener instance
-redis_listener = RedisListener()
+setup_logging()
+
+redis_listener = RedisListener(redis_client)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Start Redis listener properly as an async task on app startup."""
-    task = asyncio.create_task(redis_listener.listen())  # ✅ Now correctly running as a coroutine
-    print("✅ Gateway Redis listener started...")
-    
-    yield  # Wait until shutdown
-    
-    task.cancel()  # Stop the background task when shutting down
-    print("❌ Gateway shutting down...")
+    task = asyncio.create_task(redis_listener.listen())
+    yield
+    task.cancel()
 
 app = FastAPI(
     title="Gateway API",
@@ -25,7 +23,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
-    lifespan=lifespan  # ✅ Attach lifespan to FastAPI app
+    lifespan=lifespan
 )
 
 @app.get("/health", tags=["System"])

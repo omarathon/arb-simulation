@@ -14,6 +14,7 @@ from backend.shared.redis import get_odds_match_hash, get_bookmaker_key_full_nam
 from pydantic import ValidationError
 
 from backend.shared.utils import current_milli_time
+import logging
     
 
 class ArbOpportunity:
@@ -53,20 +54,14 @@ class ArbOpportunity:
 class ArbEngine:
     """Detects and publishes valid arbitrage opportunities to Redis."""
     
-    def __init__(self):
-        self.redis_client = redis.Redis(
-            host=shared_config.REDIS_HOST,
-            port=shared_config.REDIS_PORT,
-            db=0,
-            decode_responses=True
-        )
+    def __init__(self, redis_client: redis.Redis):
+        self.redis_client: redis.Redis = redis_client
 
     async def detect_arb_and_publish_bets(self, odds_update: OddsUpdateMessage):
-        """Detect arbitrage opportunities and publish to Redis."""
         all_bookmaker_odds = self.get_all_odds_for_match(odds_update.match)
 
         if not all_bookmaker_odds:
-            print(f"No other odds found for match: {odds_update.match}")
+            logging.info(f"No other odds found for match: {odds_update.match}")
             return
 
         arbs = self.find_arbitrage_opportunities(odds_update, all_bookmaker_odds)
@@ -75,7 +70,7 @@ class ArbEngine:
             if arb.is_net_gain():
                 arb_message = self.create_arb_message(arb)
                 self.publish_arb_message(arb_message)
-                print(f"📢 Published ArbOpportunity: {arb.match} | {arb.bookmaker_home_win} vs {arb.bookmaker_away_win}")
+                logging.info(f"📢 Published ArbOpportunity: {arb.match} | {arb.bookmaker_home_win} vs {arb.bookmaker_away_win}")
 
     def get_all_odds_for_match(self, match: str) -> Dict[str, OddsValues]:
         """Retrieve all stored odds for a given match from Redis."""
@@ -91,9 +86,9 @@ class ArbEngine:
                 odds = OddsValues(**odds_dict)
                 all_odds[bookmaker] = odds
             except json.JSONDecodeError:
-                print(f"⚠️ Failed to decode odds for match={match}, bookmaker={bookmaker}: {odds_json}")
-            except ValidationError as e:
-                print(f"⚠️ Invalid OddsValues format: {e}")
+                logging.error(f"Failed to decode JSON for match={match}, bookmaker={bookmaker}: {repr(odds_json)}", exc_info=True)
+            except ValidationError:
+                logging.error(f"Invalid OddsValues format for match={match}, bookmaker={bookmaker}", exc_info=True)
 
         return all_odds
 
@@ -103,32 +98,41 @@ class ArbEngine:
             return []
 
         arbs = []
+        used_bookmakers = {odds_update.bookmaker}
+
         for bookmaker, odds in all_bookmaker_odds.items():
-            if bookmaker == odds_update.bookmaker or odds is None:
+            if bookmaker in used_bookmakers or odds is None:
                 continue
 
-            new_arbs = [
-                ArbOpportunity(
-                    match=odds_update.match,
-                    bookmaker_home_win=odds_update.bookmaker,
-                    bookmaker_away_win=bookmaker,
-                    odds_home_win=odds_update.odds.home_win,
-                    odds_away_win=odds.away_win
-                ),
-                ArbOpportunity(
-                    match=odds_update.match,
-                    bookmaker_home_win=bookmaker,
-                    bookmaker_away_win=odds_update.bookmaker,
-                    odds_home_win=odds.home_win,
-                    odds_away_win=odds_update.odds.away_win
-                )
-            ]
+            # Create arbitrage opportunity where `odds_update.bookmaker` is home
+            arb1 = ArbOpportunity(
+                match=odds_update.match,
+                bookmaker_home_win=odds_update.bookmaker,
+                bookmaker_away_win=bookmaker,
+                odds_home_win=odds_update.odds.home_win,
+                odds_away_win=odds.away_win
+            )
 
-            for new_arb in new_arbs:
-                if new_arb.is_net_gain():
-                    arbs.append(new_arb)
+            # Create arbitrage opportunity where `bookmaker` is home
+            arb2 = ArbOpportunity(
+                match=odds_update.match,
+                bookmaker_home_win=bookmaker,
+                bookmaker_away_win=odds_update.bookmaker,
+                odds_home_win=odds.home_win,
+                odds_away_win=odds_update.odds.away_win
+            )
+
+            if arb1.is_net_gain():
+                arbs.append(arb1)
+                used_bookmakers.add(arb1.bookmaker_home_win)
+                used_bookmakers.add(arb1.bookmaker_away_win)
+            elif arb2.is_net_gain():
+                arbs.append(arb2)
+                used_bookmakers.add(arb2.bookmaker_home_win)
+                used_bookmakers.add(arb2.bookmaker_away_win)
 
         return arbs
+
 
     def create_arb_message(self, arb: ArbOpportunity) -> ArbMessage:
         """Create an ArbMessage for Redis publishing."""
@@ -159,4 +163,4 @@ class ArbEngine:
         """Publish the detected arbitrage opportunity to Redis."""
         arb_data = json.dumps(arb_message.model_dump())
         self.redis_client.publish(shared_config.REDIS_ARB_DETECTIONS_CHANNEL, arb_data)
-        print(f"📢 Published ArbMessage to Redis: {arb_data}")
+        logging.info(f"Published ArbMessage to Redis: {arb_data}")

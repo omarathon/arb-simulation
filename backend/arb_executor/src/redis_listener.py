@@ -1,3 +1,4 @@
+import logging
 import redis
 import json
 import asyncio
@@ -10,21 +11,15 @@ from pydantic import ValidationError
 class RedisListener:
     """Listens to Redis for new arb detections and executes them asynchronously."""
 
-    def __init__(self, arb_executor: ArbExecutor):
-        self.redis_client = redis.Redis(
-            host=shared_config.REDIS_HOST,
-            port=shared_config.REDIS_PORT,
-            db=0,
-            decode_responses=True
-        )
+    def __init__(self, redis_client: redis.Redis, arb_executor: ArbExecutor):
+        self.redis_client: redis.Redis = redis_client
         self.arb_executor = arb_executor
 
     async def listen(self):
-        """Continuously listens for arbitrage opportunities and executes them."""
         pubsub = self.redis_client.pubsub()
         pubsub.subscribe(shared_config.REDIS_ARB_DETECTIONS_CHANNEL)
 
-        print(f"🎧 Subscribed to Redis channel: {shared_config.REDIS_ARB_DETECTIONS_CHANNEL}")
+        logging.info(f"Subscribed to Redis channel: {shared_config.REDIS_ARB_DETECTIONS_CHANNEL}")
 
         while True:
             try:
@@ -35,16 +30,16 @@ class RedisListener:
                         arb_message = ArbMessage(**data)
 
                         asyncio.create_task(self.arb_executor.execute_arb(arb_message))
-                        
+
                     except json.JSONDecodeError:
-                        print(f"⚠️ Failed to decode JSON: {message['data']}")
-                    except ValidationError as e:
-                        print(f"⚠️ Invalid ArbMessage format: {e}")
+                        logging.error(f"Failed to decode JSON: {message['data']}", exc_info=True)
+                    except ValidationError:
+                        logging.error(f"Invalid ArbMessage format. Raw data: {message['data']}", exc_info=True)
 
                 await asyncio.sleep(0.001)  # Prevent high CPU usage
 
-            except redis.ConnectionError as e:
-                print(f"🔴 Redis Connection Error: {e}. Retrying in 5s...")
+            except redis.ConnectionError:
+                logging.error("Redis Connection Error. Retrying in 5s...", exc_info=True)
                 await asyncio.sleep(5)  # Wait before retrying connection
-            except Exception as e:
-                print(f"⚠️ Unexpected Redis Listener Error: {e}")
+            except Exception:
+                logging.error("Unexpected Redis Listener Error.", exc_info=True)

@@ -1,3 +1,4 @@
+import logging
 import redis
 import json
 import asyncio
@@ -10,16 +11,10 @@ from pydantic import ValidationError
 class RedisListener:
     """Handles Redis pub/sub listening and broadcasts messages to WebSockets."""
 
-    def __init__(self):
-        self.redis_client = redis.Redis(
-            host=shared_config.REDIS_HOST,
-            port=shared_config.REDIS_PORT,
-            db=0,
-            decode_responses=True
-        )
+    def __init__(self, redis_client: redis.Redis):
+        self.redis_client: redis.Redis = redis_client
 
     async def listen(self):
-        """Listens for Redis messages asynchronously and broadcasts updates."""
         pubsub = self.redis_client.pubsub()
         
         # Subscribe to all relevant Redis channels
@@ -29,7 +24,7 @@ class RedisListener:
             shared_config.REDIS_ARB_EXECUTIONS_CHANNEL
         )
 
-        print(f"🎧 Subscribed to Redis channels")
+        logging.info(f"Subscribed to Redis channels")
 
         while True:
             try:
@@ -58,17 +53,18 @@ class RedisListener:
                                 contents=ArbMessage(**data)
                             )
                         else:
-                            print(f"⚠️ Unrecognized message from {channel}: {data}")
+                            logging.warning(f"Unrecognized message from {channel}: {data}")
                             continue
 
-                        print(f"📨 Sending WebSocket message: {parsed_message.model_dump_json()}")
+                        logging.info(f"Sending WebSocket message: {parsed_message.model_dump_json()}")
                         await broadcast_message(parsed_message)
 
                     except json.JSONDecodeError:
-                        print(f"❌ Failed to decode JSON: {raw_data}")
-                    except ValidationError as e:
-                        print(f"❌ Validation error: {e}")
+                        logging.error(f"Failed to decode JSON: {raw_data}", exc_info=True)
+                    except ValidationError:
+                        logging.error(f"Validation error. Raw data: {raw_data}", exc_info=True)
 
                 await asyncio.sleep(0.001)  # Prevent high CPU usage
-            except Exception as e:
-                print(f"⚠️ Redis Listener Error: {e}")
+
+            except Exception:
+                logging.error("Redis Listener Error.", exc_info=True)
