@@ -2,19 +2,13 @@
 
 https://github.com/user-attachments/assets/78bb6821-8db8-4ce9-939b-8e2ae44e4d94
 
-Author: Omar Tanner
-
 # Summary
 
-For this task, I chose to build a simulation of an arbitrage bot with a semi-realistic distrubuted backend system, and real-time visualisations on the frontend.
+A simulation of an arbitrage bot with a semi-realistic distrubuted backend system, and real-time visualisations on the frontend.
 
 The backend simulates arbs by first generating odds updates according to a distribution, then detecting when odds lead to an arb, and finally simulating executing the bets for an arb by sleeping for a set duration (to simulate the time to execute the bet). In this delay, the bookmaker could've updated their price, causing either an adjustment or a cancellation (if the bookmaker closed the odd).
 
 In a real system, the executor would actually place the bets by talking to real bookmakers, and the scraper would actually scrape bookmakers' sites. Furthermore, the backend would probably be in Rust or C++ to mininise the delay in detecting and executing arbs.
-
-
-
-
 
 # Requirements for running locally
 
@@ -24,12 +18,9 @@ Built in Ubuntu (running on WSL) but the app should work on Windows/Mac too.
 
 ## Software
 
-1. Python 3 (`python --version == 3.10.12`)
-    1. https://www.python.org/downloads/
-1. Node.js and npm  (`npm --version == 10.8.1`)
-    1. https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
-1. Docker (`docker --version == 26.1.1`)
-    1. https://docs.docker.com/engine/install/
+1. [Python 3](https://www.python.org/downloads/) (`python --version == 3.10.12`)
+1. [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)  (`npm --version == 10.8.1`)
+1. [Docker](https://docs.docker.com/engine/install/) (`docker --version == 26.1.1`)
 
 
 # Workflows
@@ -78,21 +69,10 @@ Run from the root of the repository:
 1. `npm install`
 1. `npm test -- --watchAll`
 
-
-# Discussion (TBC)
-
-## Architecture
+# Architecture
 
 ![Untitled Diagram (1)](https://github.com/user-attachments/assets/d0e5f2aa-222f-4a1c-aeba-2759fd6fc82d)
 
-## Features
+# License
 
-## Assumptions
-
-## Limitations
-
-Tests - integration and E2E tests weren't implemented due to lack of time, but unit tests were implemented in the highest-priority areas concerning the core logic. On the backend, we mock Redis in the tests.
-
-## Challenges
-
-## If given more time
+GPL-3.0 (see [LICENSE](LICENSE)).
