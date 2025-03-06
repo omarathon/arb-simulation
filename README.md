@@ -1,4 +1,6 @@
-# smarkets-take-home
+# Sports Betting Arbitrage Simulation
+
+Author: Omar Tanner
 
 Running backend locally: `docker-compose -f docker-compose.yml up --build`
 
