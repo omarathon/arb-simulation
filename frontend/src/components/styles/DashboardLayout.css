@@ -1,0 +1,23 @@
+/* ====== Title Bar Styling ====== */
+.title-bar {
+    width: 100%;
+    background-color: #0d1117; /* Darker shade for contrast */
+    padding: 15px 0;
+    text-align: center;
+    border-bottom: 2px solid #00b073; /* Green accent for a modern look */
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    margin-bottom: 10px;
+  }
+  
+  /* Title Text */
+  .title-bar .title-text {
+    font-size: 2.0rem;
+    font-weight: bold;
+    color: #00b073; /* Green color matching the theme */
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-family: "Poppins", sans-serif;
+  }
+  

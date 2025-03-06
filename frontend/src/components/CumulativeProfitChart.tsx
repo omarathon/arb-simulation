@@ -3,6 +3,7 @@ import { Line } from "react-chartjs-2";
 import { Chart as ChartJS, Title, Tooltip, Legend, LinearScale, PointElement, LineElement, CategoryScale } from "chart.js";
 import { WebSocketContext } from "../contexts/WebSocketContext";
 import { Paper, Typography, TextField } from "@mui/material";
+import "./styles/Graphs.css"; // Import the new graph styles
 
 ChartJS.register(Title, Tooltip, Legend, LinearScale, PointElement, LineElement, CategoryScale);
 
@@ -22,7 +23,7 @@ const CumulativeProfitChart: React.FC = () => {
           label: "Profit (Windowed)",
           data: filteredProfits.map(entry => entry.profit),
           fill: false,
-          borderColor: "#008080", // Smarkets color
+          borderColor: "#00c853", // Bright green
           stepped: true
         },
       ],
@@ -38,7 +39,7 @@ const CumulativeProfitChart: React.FC = () => {
           label: "Total Cumulative Profit",
           data: cumulativeProfits.map(entry => entry.profit),
           fill: false,
-          borderColor: "#005f5f", // Darker for contrast
+          borderColor: "#00c853", // Bright green
           stepped: true
         },
       ],
@@ -54,44 +55,75 @@ const CumulativeProfitChart: React.FC = () => {
   }, [cumulativeProfits, timeWindowSeconds]);
 
   return (
-    <Paper elevation={3} sx={{ textAlign: "center", height:"100%", width:"100%" }}>
-      <Typography variant="h5" sx={{ padding: "20px" }}>
+    <Paper elevation={3} className="graph-container" sx={{ backgroundColor: "#121212" }}>
+      <Typography variant="h5" component="h2" className="graph-title">
         Profit Overview
       </Typography>
 
-      {/* Time Window Input */}
-      <TextField
-        label="Time Window (s)"
-        type="number"
-        variant="outlined"
-        size="small"
-        value={timeWindowSeconds}
-        onChange={(e) => setTimeWindowSeconds(Math.max(1, parseInt(e.target.value) || 1))}
-        sx={{ marginBottom: "20px", width: "140px" }}
-      />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center", // Center horizontally
+          width: "100%",
+          padding: "4px 0", // Adjust spacing
+          backgroundColor: "#121212", // Match table header background
+          borderRadius: "0px", // REMOVE any curvature
+        }}
+      >
+        <Typography variant="h6" className="graph-label" style={{ color: "#ffffff", marginTop: "7px" }}>
+          Last{" "}
+        </Typography>
+        <TextField
+          type="number"
+          variant="outlined"
+          size="small"
+          value={timeWindowSeconds}
+          onChange={(e) => setTimeWindowSeconds(Math.max(2, parseInt(e.target.value) || 1))}
+          inputProps={{
+            style: { textAlign: "center", fontWeight: "bold", color: "#ffffff" },
+          }}
+          sx={{
+            width: "100px",
+            marginLeft: "15px",
+            marginRight: "12px",
+            marginBottom: "0px",
+            backgroundColor: "#424242", // Darker background inside input box
+            borderRadius: "0px", // REMOVE curvature from input box as well
+          }}
+        />
+        <Typography variant="h6" className="graph-label" style={{ color: "#ffffff", marginTop: "7px" }}>
+          Seconds
+        </Typography>
+      </div>
+
 
       {/* Windowed Profit Chart */}
-      <div style={{ width: "98%", height: "300px", paddingBottom: "50px", paddingLeft: "10px" }}>
-        <Typography variant="h6" sx={{ marginBottom: "5px" }}>
-          Profit in the Last {timeWindowSeconds} Seconds
-        </Typography>
+      <div className="chart-wrapper">
         <Line
           data={windowedChartData}
           options={{
             responsive: true,
             maintainAspectRatio: false,
             animation: { duration: 0 },
+            plugins: {
+              legend: {
+                display: false,
+              },
+            },
             scales: {
               x: {
                 ticks: {
                   maxRotation: 45,
                   minRotation: 45,
                   font: { size: 12 },
+                  color: "#ffffff",
                 },
               },
               y: {
                 ticks: {
                   font: { size: 12 },
+                  color: "#ffffff",
                 },
               },
             },
@@ -99,28 +131,48 @@ const CumulativeProfitChart: React.FC = () => {
         />
       </div>
 
-      {/* Overall Cumulative Profit Chart */}
-      <div style={{ width: "98%", height: "300px", paddingBottom: "50px", paddingLeft: "10px" }}>
-        <Typography variant="h6" sx={{ marginBottom: "5px" }}>
-          Total Cumulative Profit
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center", // Center horizontally
+          width: "100%",
+          padding: "4px 0", // Adjust spacing
+          backgroundColor: "#121212", // Match table header background
+          borderRadius: "0px", // REMOVE any curvature
+        }}
+      >
+        <Typography variant="h6" className="graph-label" style={{ color: "#ffffff", marginTop: "7px" }}>
+           All Time
         </Typography>
+      </div>
+
+      {/* Overall Cumulative Profit Chart */}
+      <div className="chart-wrapper">
         <Line
           data={fullChartData}
           options={{
             responsive: true,
             maintainAspectRatio: false,
             animation: { duration: 0 },
+            plugins: {
+              legend: {
+                display: false,
+              },
+            },
             scales: {
               x: {
                 ticks: {
                   maxRotation: 45,
                   minRotation: 45,
                   font: { size: 12 },
+                  color: "#ffffff",
                 },
               },
               y: {
                 ticks: {
                   font: { size: 12 },
+                  color: "#ffffff",
                 },
               },
             },

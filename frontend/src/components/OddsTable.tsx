@@ -1,6 +1,16 @@
 import React, { useContext } from "react";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography } from "@mui/material";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Typography,
+} from "@mui/material";
 import { WebSocketContext } from "../contexts/WebSocketContext";
+import "./styles/Tables.css";
 
 interface OddsData {
   event: string;
@@ -12,24 +22,6 @@ interface OddsData {
   } | null;
   arb_status?: "detected" | "completed" | null;
 }
-
-// Common table styling for consistency
-const tableStyles = {
-  tableHeader: {
-    fontWeight: "bold",
-    textAlign: "center",
-    backgroundColor: "#007f7f", // Smarkets-themed color
-    color: "white",
-  },
-  tableCell: {
-    textAlign: "center",
-    fontSize: "0.95rem",
-  },
-  oddsCell: {
-    textAlign: "right",
-    fontSize: "0.95rem",
-  },
-};
 
 const OddsTable: React.FC = () => {
   const context = useContext(WebSocketContext);
@@ -50,17 +42,18 @@ const OddsTable: React.FC = () => {
   }, {});
 
   return (
-    <TableContainer component={Paper} sx={{height:"100%", width:"100%"}}>
-      <Typography variant="h5" sx={{ paddingTop: "20px", textAlign: "center" }}>
-        Live Odds Table
+    <TableContainer component={Paper} className="table-container odds-table">
+      <Typography variant="h5" component="h2" className="table-title">
+        Live Odds
       </Typography>
-      <Table stickyHeader sx={{padding: "20px"}}>
+
+      <Table stickyHeader>
         <TableHead>
           <TableRow>
-            <TableCell sx={tableStyles.tableHeader}>Match</TableCell>
-            <TableCell sx={tableStyles.tableHeader}>Bookmaker</TableCell>
-            <TableCell sx={tableStyles.tableHeader}>Home Win</TableCell>
-            <TableCell sx={tableStyles.tableHeader}>Away Win</TableCell>
+            <TableCell className="table-header">Match</TableCell>
+            <TableCell className="table-header">Bookmaker</TableCell>
+            <TableCell className="table-header">Home Win</TableCell>
+            <TableCell className="table-header">Away Win</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -68,29 +61,19 @@ const OddsTable: React.FC = () => {
             <React.Fragment key={match}>
               {matchIndex > 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} sx={{ height: "20px" }} />
+                  <TableCell colSpan={4} className="table-spacing" />
                 </TableRow>
               )}
               {matchOdds.map((odd, index) => {
-                const isClosed = odd.event === "odds_close";
-
                 return (
-                  <TableRow
-                    key={index}
-                    sx={{
-                      backgroundColor: isClosed
-                        ? "#ffcccc" // Red if closed
-                        : odd.arb_status === "completed"
-                        ? "#ccffcc" // Green if executed
-                        : odd.arb_status === "detected"
-                        ? "#ffffcc" // Yellow if detected
-                        : "#ffffff", // White otherwise
-                    }}
+                  <TableRow 
+                    key={index} 
+                    className={`table-row ${odd.odds === null ? "cancelled" : odd.arb_status || "neutral"}`}
                   >
-                    <TableCell sx={tableStyles.tableCell}>{index === 0 ? odd.match : ""}</TableCell>
-                    <TableCell sx={tableStyles.tableCell}>{odd.bookmaker}</TableCell>
-                    <TableCell sx={tableStyles.oddsCell}>{odd.odds?.home_win ?? "-"}</TableCell>
-                    <TableCell sx={tableStyles.oddsCell}>{odd.odds?.away_win ?? "-"}</TableCell>
+                    <TableCell className="table-cell">{index === 0 ? odd.match : ""}</TableCell>
+                    <TableCell className="table-cell">{odd.bookmaker}</TableCell>
+                    <TableCell className="table-cell right-align">{odd.odds?.home_win ?? "-"}</TableCell>
+                    <TableCell className="table-cell right-align">{odd.odds?.away_win ?? "-"}</TableCell>
                   </TableRow>
                 );
               })}
