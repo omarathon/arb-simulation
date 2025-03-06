@@ -6,11 +6,11 @@ Author: Omar Tanner
 
 # Requirements for running locally
 
-## Required OS
+## OS
 
 Built in Ubuntu (running on WSL) but the app should work on Windows/Mac too.
 
-## Required software
+## Software
 
 1. Python 3 (`python --version == 3.10.12`)
     1. https://www.python.org/downloads/
