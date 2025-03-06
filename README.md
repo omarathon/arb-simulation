@@ -2,10 +2,67 @@
 
 Author: Omar Tanner
 
-Running backend locally: `docker-compose -f docker-compose.yml up --build`
 
-Running backend tests: pip install backend/requirements.txt -> `pytest backend`
 
-Running frontend: `cd frontend` -> `npm start`
+# Requirements for running locally
 
-Testing frontend: `cd frontend && npm test`
+## Required OS
+
+Built in Ubuntu (running on WSL) but the app should work on Windows/Mac too.
+
+## Required software
+
+1. Python 3 (`python --version == 3.10.12`)
+    1. https://www.python.org/downloads/
+1. Node.js and npm  (`npm --version == 10.8.1`)
+    1. https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
+1. Docker (`docker --version == 26.1.1`)
+    1. https://docs.docker.com/engine/install/
+
+
+# Workflows
+
+## Running locally
+
+You will need to run both the frontend and backend locally to fully run the app.
+
+⚠️ **Note:** ports `3000` and `8000-8005` must be free.
+
+### Backend
+
+Run from the root of the repository:
+
+1. `docker-compose -f docker-compose.yml up --build -d`
+
+This will run the backend in detached mode in docker. If you would like to run it in attached mode (e.g. to see the logs), remove the `-d`.
+
+### Frontend
+
+Run from the root of the repository:
+
+1. `cd frontend`
+1. `npm install`
+1. `npm start`
+
+## Testing locally
+
+### Backend
+
+Run from the root of the repository:
+
+1. Make a new venv:
+    1. `python -m venv venv`
+    1. `source venv/bin/activate`
+1. Install requirements:
+    1. `pip install -r backend/requirements.txt`
+1. Run tests
+    1. `pytest backend`
+
+### Frontend
+
+Run from the root of the repository:
+
+1. `cd frontend`
+1. `npm install`
+1. `npm test -- --watchAll`
+
