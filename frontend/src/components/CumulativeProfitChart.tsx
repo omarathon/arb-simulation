@@ -11,9 +11,10 @@ const CumulativeProfitChart: React.FC = () => {
   const { cumulativeProfits } = useContext(WebSocketContext) ?? { cumulativeProfits: [] };
   const [timeWindowSeconds, setTimeWindowSeconds] = useState(30);
 
-  // Generate Data for Time Window Chart
+  // Generate data for filtered profits graph
   const getWindowedChartData = () => {
     const currentTime = Date.now();
+    // Filter profits into window
     const filteredProfits = cumulativeProfits.filter(entry => currentTime - entry.timestamp <= timeWindowSeconds * 1000);
     
     return {
@@ -30,7 +31,7 @@ const CumulativeProfitChart: React.FC = () => {
     };
   };
 
-  // Generate Data for Full Profit Chart
+  // Generate data for full profits graph
   const getFullChartData = () => {
     return {
       labels: cumulativeProfits.map(entry => new Date(entry.timestamp).toLocaleTimeString()),
@@ -60,17 +61,7 @@ const CumulativeProfitChart: React.FC = () => {
         Profit Overview
       </Typography>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center", // Center horizontally
-          width: "100%",
-          padding: "4px 0", // Adjust spacing
-          backgroundColor: "#121212", // Match table header background
-          borderRadius: "0px", // REMOVE any curvature
-        }}
-      >
+      <div className="graph-header">
         <Typography variant="h6" className="graph-label" style={{ color: "#ffffff", marginTop: "7px" }}>
           Last{" "}
         </Typography>
@@ -89,7 +80,7 @@ const CumulativeProfitChart: React.FC = () => {
             marginRight: "12px",
             marginBottom: "0px",
             backgroundColor: "#424242", // Darker background inside input box
-            borderRadius: "0px", // REMOVE curvature from input box as well
+            borderRadius: "0px", // Remove curvature curvature from input box as well
           }}
         />
         <Typography variant="h6" className="graph-label" style={{ color: "#ffffff", marginTop: "7px" }}>
@@ -98,7 +89,7 @@ const CumulativeProfitChart: React.FC = () => {
       </div>
 
 
-      {/* Windowed Profit Chart */}
+      {/* Windowed profit chart */}
       <div className="chart-wrapper">
         <Line
           data={windowedChartData}
@@ -131,23 +122,13 @@ const CumulativeProfitChart: React.FC = () => {
         />
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center", // Center horizontally
-          width: "100%",
-          padding: "4px 0", // Adjust spacing
-          backgroundColor: "#121212", // Match table header background
-          borderRadius: "0px", // REMOVE any curvature
-        }}
-      >
+      <div className="graph-header">
         <Typography variant="h6" className="graph-label" style={{ color: "#ffffff", marginTop: "7px" }}>
            All Time
         </Typography>
       </div>
 
-      {/* Overall Cumulative Profit Chart */}
+      {/* Overall cumulative profit chart */}
       <div className="chart-wrapper">
         <Line
           data={fullChartData}

@@ -1,103 +1,91 @@
-/* ====== Table Container ====== */
 .table-container {
-    width: 100%;
-    height: 100%;
-    /* background-color: #121212; */
-    border-radius: 8px;
-  }
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+}
   
-  /* ====== Title Styling (Modern Look) ====== */
- .table-container .table-title {
-    padding-top: 20px;
-    margin-bottom: 20px; /* Space below the title */
-    text-align: center;
-    font-weight: bold;
-    font-size: 1.5rem; /* Slightly bigger */
-    color: #00b073; /* Modern green */
-    text-transform: uppercase; /* Makes it ALL CAPS */
-    letter-spacing: 2px; /* Slightly spaced out for modern look */
-    font-family: "Poppins", "Arial", sans-serif;
+.table-container .table-title {
+  padding-top: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #00b073;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-family: "Poppins", "Arial", sans-serif;
 }
 
 
   
-  /* ====== Header Styling ====== */
-  .table-container .table-header {
-    font-weight: bold;
-    text-align: center;
-    /* background-color: #303030; */
-    color: #ffffff;
-    font-size: 1.05rem;
-  }
+.table-container .table-header {
+  font-weight: bold;
+  text-align: center;
+  color: #ffffff;
+  font-size: 1.05rem;
+}
   
-  /* ====== Table Cell Styling ====== */
-  .table-container .table-cell {
-    text-align: center;
-    font-size: 1.0rem;
-    color: #e0e0e0; /* Slightly lighter than white for contrast */
-  }
+.table-container .table-cell {
+  text-align: center;
+  font-size: 1.0rem;
+  color: #e0e0e0; /* Slightly lighter than white for contrast */
+}
   
-  /* Right-align specific cells */
-  .right-align {
-    text-align: right;
-  }
+.right-align {
+  text-align: right;
+}
+
   
-  /* ====== Status-Based Row Colors ====== */
+.arbitrage-table .table-row.detected {
+  background-color: rgba(255, 193, 7, 0.3) !important; /* Yellow */
+  color: #ffeb3b !important;
+}
   
-  /* Arbitrage Table Row Colors */
-  .arbitrage-table .table-row.detected {
-    background-color: rgba(255, 193, 7, 0.3) !important; /* Yellow */
-    color: #ffeb3b !important;
-  }
+.arbitrage-table .table-row.completed {
+  background-color: rgba(76, 175, 80, 0.3) !important; /* Green */
+  color: #4caf50 !important;
+}
   
-  .arbitrage-table .table-row.completed {
-    background-color: rgba(76, 175, 80, 0.3) !important; /* Green */
-    color: #4caf50 !important;
-  }
-  
-  .arbitrage-table .table-row.adjusted {
-    background-color: rgba(255, 152, 0, 0.3) !important; /* Orange */
-    color: #ff9800 !important;
-  }
+.arbitrage-table .table-row.adjusted {
+  background-color: rgba(255, 152, 0, 0.3) !important; /* Orange */
+  color: #ff9800 !important;
+}
   
   .arbitrage-table .table-row.cancelled {
-    background-color: rgba(244, 67, 54, 0.3) !important; /* Red */
-    color: #ff5252 !important;
-  }
+  background-color: rgba(244, 67, 54, 0.3) !important; /* Red */
+  color: #ff5252 !important;
+}
   
-  /* Odds Table Row Colors */
-  .odds-table .table-row.detected {
-    background-color: rgba(255, 193, 7, 0.3) !important; /* Yellow */
-    color: #ffeb3b !important;
-  }
+.odds-table .table-row.detected {
+  background-color: rgba(255, 193, 7, 0.3) !important; /* Yellow */
+  color: #ffeb3b !important;
+}
   
-  .odds-table .table-row.completed {
-    background-color: rgba(76, 175, 80, 0.3) !important; /* Green */
-    color: #4caf50 !important;
-  }
+.odds-table .table-row.completed {
+  background-color: rgba(76, 175, 80, 0.3) !important; /* Green */
+  color: #4caf50 !important;
+}
   
-  .odds-table .table-row.neutral {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    color: #ffffff !important;
-  }
+.odds-table .table-row.neutral {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+}
 
-  .odds-table .table-row.cancelled {
-    background-color: rgba(244, 67, 54, 0.3) !important; /* Red */
-    color: #ff5252 !important;
-  }
+.odds-table .table-row.cancelled {
+  background-color: rgba(244, 67, 54, 0.3) !important; /* Red */
+  color: #ff5252 !important;
+}
   
-  /* ====== Alternate Row Shading (For Visibility) ====== */
-  .table-row:nth-child(even) {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-  }
+/* Alternate row sharing (for visibility) */
+.table-row:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
   
-  .table-row:nth-child(odd) {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-  }
+.table-row:nth-child(odd) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
   
-  /* ====== Table Spacing Between Matches ====== */
-  .table-spacing {
-    height: 20px !important;
-    background-color: transparent !important;
-  }
-  
+.table-spacing {
+  height: 20px !important;
+  background-color: transparent !important;
+}

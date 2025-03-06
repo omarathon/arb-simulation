@@ -1,26 +1,22 @@
-/* ====== Graph Container ====== */
 .graph-container {
     width: 100%;
     height: 100%;
-    /* background-color: #121212 important!; Match Smarkets dark theme */
     border-radius: 8px;
     text-align: center;
 }
 
-/* ====== Title Styling ====== */
 .graph-container .graph-title {
     padding-top: 20px;
     margin-bottom: 20px;
     text-align: center;
     font-weight: bold;
     font-size: 1.5rem;
-    color: #00b073; /* Modern green */
+    color: #00b073;
     text-transform: uppercase;
     letter-spacing: 2px;
     font-family: "Poppins", "Arial", sans-serif;
 }
 
-/* ====== Graph Labels ====== */
 .graph-container .graph-label {
     font-size: 1.2rem;
     font-weight: bold;
@@ -28,7 +24,6 @@
     margin-bottom: 10px;
 }
 
-/* ====== Chart Area ====== */
 .chart-wrapper {
     width: 98%;
     height: 300px;
@@ -37,7 +32,6 @@
     padding-top: 10px;
 }
 
-/* ====== Input Box Styling ====== */
 .time-window-input {
     margin-bottom: 20px;
     width: 140px;
@@ -46,3 +40,12 @@
     border-radius: 5px;
 }
 
+.graph-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 4px 0;
+    background-color: #121212;
+    border-radius: 0px; /* No curvature */
+}

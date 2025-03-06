@@ -11,17 +11,7 @@ import {
 } from "@mui/material";
 import { WebSocketContext } from "../contexts/WebSocketContext";
 import "./styles/Tables.css";
-
-interface OddsData {
-  event: string;
-  match: string;
-  bookmaker: string;
-  odds: {
-    home_win: number;
-    away_win: number;
-  } | null;
-  arb_status?: "detected" | "completed" | null;
-}
+import { OddsData } from "../types";
 
 const OddsTable: React.FC = () => {
   const context = useContext(WebSocketContext);
@@ -61,7 +51,7 @@ const OddsTable: React.FC = () => {
             <React.Fragment key={match}>
               {matchIndex > 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="table-spacing" />
+                  <TableCell colSpan={4} className="table-spacing" /> {/* Spacing between each match */}
                 </TableRow>
               )}
               {matchOdds.map((odd, index) => {

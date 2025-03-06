@@ -1,5 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
-import { useOdds } from "../../hooks/useOdds";
+import { useOdds } from "../../hooks";
 import { OddsData, ArbMessage, ArbStatus } from "../../types";
 
 describe("useOdds Hook", () => {

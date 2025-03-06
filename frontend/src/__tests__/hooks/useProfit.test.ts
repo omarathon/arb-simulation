@@ -5,7 +5,7 @@ describe("useProfit hook", () => {
   test("accumulates profit correctly with multiple updates", () => {
     // Arrange
     const { result } = renderHook(() => useProfit());
-    const now = Date.now();
+    const now = Date.now(); 
 
     // Act - add profits
     act(() => {

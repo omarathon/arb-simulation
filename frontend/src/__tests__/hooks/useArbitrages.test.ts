@@ -1,6 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
-import { ARB_WINDOW, useArbitrages } from "../../hooks/useArbitrages";
-import { ArbMessage } from "../../types/arb";
+import { ARB_WINDOW, useArbitrages } from "../../hooks";
+import { ArbMessage } from "../../types";
 
 describe("useArbitrages hook", () => {
   test("adds an arbitrage correctly", () => {

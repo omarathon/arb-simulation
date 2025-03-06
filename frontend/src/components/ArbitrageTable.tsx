@@ -20,6 +20,8 @@ const niceStatuses: Record<ArbMessage["status"], string> = {
   cancelled: "Cancelled",
 };
 
+const NUM_ARBS = 10; // How many arbs to show
+
 const ArbitrageTable: React.FC = () => {
   const context = useContext(WebSocketContext);
 
@@ -30,7 +32,7 @@ const ArbitrageTable: React.FC = () => {
   const { arbitrages } = context;
   const arbList: ArbMessage[] = Object.values(arbitrages)
     .sort((a, b) => b.timestamp - a.timestamp)
-    .slice(0, 10); // Show last 10 arbitrages
+    .slice(0, NUM_ARBS);
 
   return (
     <TableContainer component={Paper} className="table-container arbitrage-table">
