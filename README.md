@@ -1,8 +1,8 @@
-# Sports Betting Arbitrage Simulation
+# Sports Betting Arbitrage Bot Simulation
+
+![image](https://github.com/user-attachments/assets/e20f4127-7fe3-4fee-acb8-192214cb79cb)
 
 Author: Omar Tanner
-
-
 
 # Requirements for running locally
 
@@ -65,4 +65,3 @@ Run from the root of the repository:
 1. `cd frontend`
 1. `npm install`
 1. `npm test -- --watchAll`
-
