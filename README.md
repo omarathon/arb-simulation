@@ -8,3 +8,4 @@ Running backend tests: pip install backend/requirements.txt -> `pytest backend`
 
 Running frontend: `cd frontend` -> `npm start`
 
+Testing frontend: `cd frontend && npm test`
