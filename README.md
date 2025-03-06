@@ -46,7 +46,7 @@ Run from the root of the repository:
 
 ## Testing locally
 
-### Backend
+### Backend (28 tests)
 
 Run from the root of the repository:
 
@@ -58,7 +58,7 @@ Run from the root of the repository:
 1. Run tests
     1. `pytest backend`
 
-### Frontend
+### Frontend (15 tests)
 
 Run from the root of the repository:
 
