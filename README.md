@@ -4,6 +4,12 @@
 
 Author: Omar Tanner
 
+Choices:
+1. Python backend, React frontend
+    1. Live application so react makes sense as it has state
+      1. Using Material UI to avoid reinventing the wheel on design
+    2.  
+
 # Requirements for running locally
 
 ## OS
@@ -65,3 +71,20 @@ Run from the root of the repository:
 1. `cd frontend`
 1. `npm install`
 1. `npm test -- --watchAll`
+
+
+# Discussion
+
+## Architecture
+
+![Untitled Diagram (1)](https://github.com/user-attachments/assets/d0e5f2aa-222f-4a1c-aeba-2759fd6fc82d)
+
+## Features
+
+## Assumptions
+
+## Limitations
+
+## Challenges
+
+## If given more time
