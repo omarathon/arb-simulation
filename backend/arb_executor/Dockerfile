@@ -1,4 +1,4 @@
-FROM smarkets-base-image
+FROM base-image
 WORKDIR /app
 ENV PYTHONPATH=/app
 EXPOSE 8001

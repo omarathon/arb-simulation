@@ -5,7 +5,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.base
-    image: smarkets-base-image
+    image: base-image
 
   redis:
     image: redis:latest
