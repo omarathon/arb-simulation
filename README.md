@@ -1,14 +1,20 @@
 # Sports Betting Arbitrage Bot Simulation
 
-![image](https://github.com/user-attachments/assets/e20f4127-7fe3-4fee-acb8-192214cb79cb)
+https://github.com/user-attachments/assets/78bb6821-8db8-4ce9-939b-8e2ae44e4d94
 
 Author: Omar Tanner
 
-Choices:
-1. Python backend, React frontend
-    1. Live application so react makes sense as it has state
-      1. Using Material UI to avoid reinventing the wheel on design
-    2.  
+# Summary
+
+For this task, I chose to build a simulation of an arbitrage bot with a semi-realistic distrubuted backend system, and real-time visualisations on the frontend.
+
+The backend simulates arbs by first generating odds updates according to a distribution, then detecting when odds lead to an arb, and finally simulating executing the bets for an arb by sleeping for a set duration (to simulate the time to execute the bet). In this delay, the bookmaker could've updated their price, causing either an adjustment or a cancellation (if the bookmaker closed the odd).
+
+In a real system, the executor would actually place the bets by talking to real bookmakers, and the scraper would actually scrape bookmakers' sites. Furthermore, the backend would probably be in Rust or C++ to mininise the delay in detecting and executing arbs.
+
+
+
+
 
 # Requirements for running locally
 
@@ -73,7 +79,7 @@ Run from the root of the repository:
 1. `npm test -- --watchAll`
 
 
-# Discussion
+# Discussion (TBC)
 
 ## Architecture
 
@@ -84,6 +90,8 @@ Run from the root of the repository:
 ## Assumptions
 
 ## Limitations
+
+Tests - integration and E2E tests weren't implemented due to lack of time, but unit tests were implemented in the highest-priority areas concerning the core logic. On the backend, we mock Redis in the tests.
 
 ## Challenges
 
